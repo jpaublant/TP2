@@ -4,7 +4,6 @@ import 'main.dart';
 import 'accueil.dart';
 import 'package:flutter/material.dart';
 
- double nbcasesligne = 3;
 
 math.Random random = new math.Random();
 
@@ -21,10 +20,11 @@ class Tile  extends StatelessWidget {
         child: Container(
           child: Align(
             alignment: this.alignment,
-            widthFactor: 1 / number,
-            heightFactor: 1 / number,
+            widthFactor: 1 / (number),
+            heightFactor: 1 / (number),
             child: Image.network(this.imageURL),
           ),
+        
         ),
       ),
     );
@@ -36,24 +36,6 @@ class Tile  extends StatelessWidget {
   }
 }
 
-/*class TileWidget extends StatelessWidget {
-  final Tile2 tile;
-
-  TileWidget(this.tile);
-
-  @override
-  Widget build(BuildContext context) {
-    return this.coloredBox();
-  }
-
-  Widget coloredBox() {
-    return Container(
-        color: tile.color,
-        child: Padding(
-          padding: EdgeInsets.all(70.0),
-        ));
-  }
-}*/
 List<Widget> createTiles(double nbTiles) {
   List<Widget> res = [];
   for (double i = -1; i <= 1; i += 2 / (nbTiles-1)) {
@@ -62,6 +44,7 @@ List<Widget> createTiles(double nbTiles) {
       // boucle x
         res.add(new Tile(imageURL: "https://i.picsum.photos/id/785/512/1024.jpg?hmac=Vr6gXYYAYlToUd6980VUZLTMQMr48TI8kmKcHWcqQ2k",
                          alignment: Alignment(j, i)));
+       
     }
   }
   return res;
@@ -77,36 +60,49 @@ class Taquin extends StatefulWidget {
 
 }
  
+
+
 class Jeutaquin extends State<Taquin> {
-
-Widget createTileWidgetFrom(Tile tile) {
-    return Container(
-      margin: EdgeInsets.all(4.0),
-      child: InkWell(onTap: () {
-        swapTiles();
-      },
-        child: tile.croppedImageTile(nbcasesligne)),
-    );
-    
-  }
-
-
-  List<Widget> tiles = List<Widget>.generate(
-                    (nbcasesligne * nbcasesligne).toInt(),
-                    (index) {
-                  return createTileWidgetFrom(
-                    createTiles(nbcasesligne)[index]);
-                }); 
- 
-  swapTiles() {
-       setState(() {
-       tiles.insert((nbcasesligne*nbcasesligne).toInt(), tiles.removeAt(0));
-          });
-              }
+   
+ double _nbcasesligne = 3;
  
   @override
-  Widget build(BuildContext context) {
+  void initState() {
+    super.initState();
+    generateTiles();
+    generateTiles2();
+   
+  }
+  
+ List<Widget>  generateTiles() {
+        print(_nbcasesligne);
+        return List<Widget>.generate((_nbcasesligne * _nbcasesligne).toInt(), (index) {
+        return createTileWidgetFrom(createTiles(_nbcasesligne)[index]);
+    });
+  }
+ 
+ Widget createTileWidgetFrom(Tile tile) {
+  
+    return Container(
+      margin: EdgeInsets.all(4.0),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          child: tile.croppedImageTile(_nbcasesligne),
+        ),  
+    ),);
     
+  }
+ /*  void generateTiles2() {
+  tiles=generateTiles();
+  }*/
+    List<Widget> tiles;
+   void generateTiles2() {
+    tiles=generateTiles();
+  }
+  @override
+  Widget build(BuildContext context) {
+ 
     return Scaffold(
       appBar: AppBar(
         title: Text('Jeu Taquin'),
@@ -115,32 +111,61 @@ Widget createTileWidgetFrom(Tile tile) {
           child: Column(
         children: <Widget>[
           Expanded(
-            child: GridView.count(
+            child: GridView.builder(
+            
                 primary: false,
                 padding: const EdgeInsets.all(4),
-                crossAxisSpacing: 4,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisSpacing: 4,
                 mainAxisSpacing: 4,
-                crossAxisCount: nbcasesligne.toInt(),
-                children: tiles,
-                ),
-          ),
+                crossAxisCount: _nbcasesligne.toInt(),),
+                itemCount: (_nbcasesligne*_nbcasesligne).toInt(),
+                itemBuilder: (BuildContext context, int index) {
+                return InkWell( 
+                  child:  tiles[index], // ici pour que le slider fonctionne correctement j'utilise 'generateTiles()[]'
+                                         // cependant pour que les tuiles soient interactives il faut que j'utilise tuiles[index]
+                  onTap: () {
+                   setState(() {
+                     tiles.insert(index, tiles.removeAt(index+1));
+                      
+                   });
+                   
+                  },
+                );
+                rebuildAllChildren(context) ;},
+          ),),
           Slider(
-              value: nbcasesligne,
+              value: _nbcasesligne,
               min: 3,
               max: 6,
               divisions: 3,
-              label: nbcasesligne.round().toString(),
+              label: _nbcasesligne.round().toString(),
               onChanged: (double value) {
                 setState(() {
-                  nbcasesligne = value;
+                
+                  _nbcasesligne = value;
+                  
                 });
-              })
+               rebuildAllChildren(context);},
+             ),
         ],
       )),
+     
     );
-   
+    
   }
-
+  void rebuildAllChildren(BuildContext context) {
+  void rebuild(Element el) {
+    el.markNeedsBuild();
+    el.visitChildren(rebuild);
+  }
+  (context as Element).visitChildren(rebuild);
+}
+ swapTiles() {
+       setState(() {
+   
+       generateTiles().insert(1, generateTiles().removeAt(0));
+          });
+              } 
 
 }
  
